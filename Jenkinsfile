@@ -41,7 +41,7 @@ pipeline {
                             sh 'aws sts get-caller-identity'
                         }
 
-                        // Running Terraform inside a Docker container
+                        // Running Terraform inside a Docker container with AWS credentials
                         docker.image('hashicorp/terraform:latest').inside("-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} -e AWS_DEFAULT_REGION=${AWS_REGION}") {
                             sh 'terraform init'
                         }
@@ -62,7 +62,7 @@ pipeline {
                             sh 'aws sts get-caller-identity'
                         }
 
-                        // Running Terraform inside a Docker container
+                        // Running Terraform inside a Docker container with AWS credentials
                         docker.image('hashicorp/terraform:latest').inside("-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} -e AWS_DEFAULT_REGION=${AWS_REGION}") {
                             sh 'terraform plan -out=tfplan'
                         }
@@ -84,7 +84,7 @@ pipeline {
                             sh 'aws sts get-caller-identity'
                         }
 
-                        // Running Terraform inside a Docker container
+                        // Running Terraform inside a Docker container with AWS credentials
                         docker.image('hashicorp/terraform:latest').inside("-e AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID} -e AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY} -e AWS_DEFAULT_REGION=${AWS_REGION}") {
                             sh 'terraform apply -auto-approve tfplan'
                         }
