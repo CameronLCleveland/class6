@@ -1,30 +1,21 @@
 pipeline {
     agent any
     environment {
-        AWS_REGION = 'eu-west-1'
+        AWS_REGION = 'eu-west-1'  // Set AWS region as needed
     }
     stages {
         stage('Set AWS Credentials') {
             steps {
                 withCredentials([[ 
                     $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'AWS_ACCESS_KEY' 
+                    credentialsId: 'AWS_ACCESS_KEY'  // Ensure this matches the credentials in Jenkins
                 ]]) {
                     script {
-                        // Use environment variables explicitly for both AWS CLI and Terraform
-                        withEnv([
-                            "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}",
-                            "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}",
-                            "AWS_DEFAULT_REGION=${AWS_REGION}"
-                        ]) {
-                            // Running AWS CLI inside a Docker container with AWS credentials
-                            docker.image('amazon/aws-cli').inside {
-                                sh '''
-                                echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
-                                aws sts get-caller-identity
-                                '''
-                            }
-                        }
+                        // AWS credentials are injected into the environment
+                        echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+                        echo "AWS_SECRET_ACCESS_KEY: $AWS_SECRET_ACCESS_KEY"
+                        // Test AWS credentials by running AWS CLI to verify they work
+                        sh 'aws sts get-caller-identity'
                     }
                 }
             }
@@ -38,28 +29,8 @@ pipeline {
 
         stage('Initialize Terraform') {
             steps {
-                withCredentials([[ 
-                    $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'AWS_ACCESS_KEY' 
-                ]]) {
-                    script {
-                        withEnv([
-                            "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}",
-                            "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}",
-                            "AWS_DEFAULT_REGION=${AWS_REGION}"
-                        ]) {
-                            // Running AWS CLI inside a Docker container with AWS credentials
-                            docker.image('amazon/aws-cli').inside {
-                                sh 'aws sts get-caller-identity'
-                            }
-
-                            // Running Terraform inside a Docker container with AWS credentials
-                            docker.image('hashicorp/terraform:latest').inside {
-                                sh 'terraform init'
-                            }
-                        }
-                    }
-                }
+                // Initialize Terraform, no need for Docker or AWS CLI here
+                sh 'terraform init'
             }
         }
 
@@ -70,21 +41,13 @@ pipeline {
                     credentialsId: 'AWS_ACCESS_KEY' 
                 ]]) {
                     script {
-                        withEnv([
-                            "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}",
-                            "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}",
-                            "AWS_DEFAULT_REGION=${AWS_REGION}"
-                        ]) {
-                            // Running AWS CLI inside a Docker container with AWS credentials
-                            docker.image('amazon/aws-cli').inside {
-                                sh 'aws sts get-caller-identity'
-                            }
-
-                            // Running Terraform inside a Docker container with AWS credentials
-                            docker.image('hashicorp/terraform:latest').inside {
-                                sh 'terraform plan -out=tfplan'
-                            }
-                        }
+                        // Ensure AWS credentials are passed to the environment before running Terraform
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_REGION
+                        terraform plan -out=tfplan
+                        '''
                     }
                 }
             }
@@ -98,21 +61,13 @@ pipeline {
                     credentialsId: 'AWS_ACCESS_KEY' 
                 ]]) {
                     script {
-                        withEnv([
-                            "AWS_ACCESS_KEY_ID=${AWS_ACCESS_KEY_ID}",
-                            "AWS_SECRET_ACCESS_KEY=${AWS_SECRET_ACCESS_KEY}",
-                            "AWS_DEFAULT_REGION=${AWS_REGION}"
-                        ]) {
-                            // Running AWS CLI inside a Docker container with AWS credentials
-                            docker.image('amazon/aws-cli').inside {
-                                sh 'aws sts get-caller-identity'
-                            }
-
-                            // Running Terraform inside a Docker container with AWS credentials
-                            docker.image('hashicorp/terraform:latest').inside {
-                                sh 'terraform apply -auto-approve tfplan'
-                            }
-                        }
+                        // Apply the Terraform plan with injected AWS credentials
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_REGION
+                        terraform apply -auto-approve tfplan
+                        '''
                     }
                 }
             }
