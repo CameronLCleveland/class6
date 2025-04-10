@@ -10,3 +10,7 @@ crash.log
 
 # Ignore any Terraform plan output files
 *.tfplan
+
+.terraform/
+.terraform.lock.hcl
+
