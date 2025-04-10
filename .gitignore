@@ -2,3 +2,11 @@
 .terraform.lock.hcl
 .terraform
 
+# Ignore Terraform state and working directory files
+.terraform/
+terraform.tfstate
+terraform.tfstate.*
+crash.log
+
+# Ignore any Terraform plan output files
+*.tfplan
