@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        AWS_REGION = 'eu-west-1' 
+        AWS_REGION = 'eu-west-1'
     }
     stages {
         stage('Set AWS Credentials') {
@@ -10,13 +10,15 @@ pipeline {
                     $class: 'AmazonWebServicesCredentialsBinding', 
                     credentialsId: 'AWS_ACCESS_KEY' 
                 ]]) {
-                    sh '''
-                    echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
-                    docker run --rm \
-                        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                        -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                        amazon/aws-cli sts get-caller-identity
-                    '''
+                    script {
+                        // Running AWS CLI inside a Docker container with AWS credentials
+                        docker.image('amazon/aws-cli').inside {
+                            sh '''
+                            echo "AWS_ACCESS_KEY_ID: $AWS_ACCESS_KEY_ID"
+                            aws sts get-caller-identity
+                            '''
+                        }
+                    }
                 }
             }
         }
@@ -33,13 +35,17 @@ pipeline {
                     $class: 'AmazonWebServicesCredentialsBinding', 
                     credentialsId: 'AWS_ACCESS_KEY' 
                 ]]) {
-                    sh '''
-                    docker run --rm \
-                        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                        -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                        amazon/aws-cli sts get-caller-identity
-                    '''
-                    sh "terraform init"
+                    script {
+                        // Running AWS CLI inside a Docker container with AWS credentials
+                        docker.image('amazon/aws-cli').inside {
+                            sh 'aws sts get-caller-identity'
+                        }
+
+                        // Running Terraform inside a Docker container
+                        docker.image('hashicorp/terraform:latest').inside {
+                            sh 'terraform init'
+                        }
+                    }
                 }
             }
         }
@@ -50,13 +56,17 @@ pipeline {
                     $class: 'AmazonWebServicesCredentialsBinding', 
                     credentialsId: 'AWS_ACCESS_KEY' 
                 ]]) {
-                    sh '''
-                    docker run --rm \
-                        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                        -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                        amazon/aws-cli sts get-caller-identity
-                    '''
-                    sh 'terraform plan -out=tfplan'
+                    script {
+                        // Running AWS CLI inside a Docker container with AWS credentials
+                        docker.image('amazon/aws-cli').inside {
+                            sh 'aws sts get-caller-identity'
+                        }
+
+                        // Running Terraform inside a Docker container
+                        docker.image('hashicorp/terraform:latest').inside {
+                            sh 'terraform plan -out=tfplan'
+                        }
+                    }
                 }
             }
         }
@@ -68,13 +78,17 @@ pipeline {
                     $class: 'AmazonWebServicesCredentialsBinding', 
                     credentialsId: 'AWS_ACCESS_KEY' 
                 ]]) {
-                    sh '''
-                    docker run --rm \
-                        -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-                        -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-                        amazon/aws-cli sts get-caller-identity
-                    '''
-                    sh 'terraform apply -auto-approve tfplan'
+                    script {
+                        // Running AWS CLI inside a Docker container with AWS credentials
+                        docker.image('amazon/aws-cli').inside {
+                            sh 'aws sts get-caller-identity'
+                        }
+
+                        // Running Terraform inside a Docker container
+                        docker.image('hashicorp/terraform:latest').inside {
+                            sh 'terraform apply -auto-approve tfplan'
+                        }
+                    }
                 }
             }
         }
@@ -89,5 +103,3 @@ pipeline {
         }
     }
 }
-
-
