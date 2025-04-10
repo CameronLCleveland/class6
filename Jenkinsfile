@@ -36,14 +36,19 @@ pipeline {
 
         stage('Refresh Terraform State') {
             steps {
-                script {
-                    // Ensure AWS credentials are passed to the environment before running Terraform
-                    sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                    export AWS_DEFAULT_REGION=$AWS_REGION
-                    terraform refresh
-                    '''
+                withCredentials([[ 
+                    $class: 'AmazonWebServicesCredentialsBinding', 
+                    credentialsId: 'AWS_ACCESS_KEY' 
+                ]]) {
+                    script {
+                        // Ensure AWS credentials are passed to the environment before running Terraform
+                        sh '''
+                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
+                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
+                        export AWS_DEFAULT_REGION=$AWS_REGION
+                        terraform refresh
+                        '''
+                    }
                 }
             }
         }
