@@ -1,4 +1,4 @@
-pipeline {
+pipeline { 
     agent any
     environment {
         AWS_REGION = 'eu-west-1'  // Set AWS region as needed
@@ -34,52 +34,7 @@ pipeline {
             }
         }
 
-        stage('Plan Terraform') {
+        stage('Refresh Terraform State') {
             steps {
                 withCredentials([[ 
-                    $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'AWS_ACCESS_KEY' 
-                ]]) {
-                    script {
-                        // Ensure AWS credentials are passed to the environment before running Terraform
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                        export AWS_DEFAULT_REGION=$AWS_REGION
-                        terraform plan -out=tfplan
-                        '''
-                    }
-                }
-            }
-        }
-
-        stage('Apply Terraform') {
-            steps {
-                input message: "Approve Terraform Apply?", ok: "Deploy"
-                withCredentials([[ 
-                    $class: 'AmazonWebServicesCredentialsBinding', 
-                    credentialsId: 'AWS_ACCESS_KEY' 
-                ]]) {
-                    script {
-                        // Apply the Terraform plan with injected AWS credentials
-                        sh '''
-                        export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                        export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                        export AWS_DEFAULT_REGION=$AWS_REGION
-                        terraform apply -auto-approve tfplan
-                        '''
-                    }
-                }
-            }
-        }
-    }
-
-    post {
-        success {
-            echo 'Terraform deployment completed successfully!'
-        }
-        failure {
-            echo 'Terraform deployment failed!'
-        }
-    }
-}
+                    $class
